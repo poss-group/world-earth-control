@@ -38,5 +38,11 @@ mesh_statistics.txt
 mesh_statistics_AYS.tex
 psopt_solution_AYS.txt
 user
-
-
+AYS.txt
+H.dat
+XY.dat
+gnuplot.scp
+lambda.dat
+t.dat
+u.dat
+x.dat
