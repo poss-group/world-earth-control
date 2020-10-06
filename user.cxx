@@ -22,6 +22,8 @@ double TS = 50 ;
 double rho = 2 ;
 double sigma0 = 4 * pow(10, 12); 
 double beta0 = 0.03 ; 
+double aupper = 0.5897;//(345 / (345 + 240));
+double ylower = 0.3636;//( 4 / 11 );
 //////////////////////////////////////////////////////////////////////////
 /////////////////// Define auxiliary function ////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -42,7 +44,14 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
                       adouble* parameters,adouble& t0, adouble& tf,
                       adouble* xad, int iphase, Workspace* workspace)
 {   
-    //return tf; // to minimize controlling time
+    adouble af = final_states[ CINDEX(1) ];
+    adouble yf = final_states[ CINDEX(2) ];
+    adouble L;
+    L = - ( pow((af - aupper),2) + pow((yf - ylower),2) );
+    // return L;//to maximize final distance from boundaries
+    // return (L + tf);//to maximize final distance from boundaries & controlling time
+    // return tf; // to minimize controlling time
+
     return 0.0;
 }
 
@@ -58,13 +67,15 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
 
     adouble a = states[ CINDEX(1) ];
     adouble y = states[ CINDEX(2) ];
-    double aU = 345 / (345 + 240);
-    double yL = 4 / 11 ;
 
-    adouble L;
-    //L = pow((sigma - sigma0) , 2) + pow((beta - beta0) , 2); // To minimize the total amount of control
-    L = - ( pow((a - aU),2) + pow((y - yL),2) ); // To maximize distances from the boundaries
-    return  L;
+    adouble C_control;
+    adouble C_boundaries;
+    C_control = pow((sigma/sigma0 - 1) , 2) + pow((beta/beta0 - 1) , 2);
+    C_boundaries = - ( pow((a - aupper),2) + pow((y - ylower),2) ); 
+    return  C_control; // To minimize the total amount of control
+    // return  C_boundaries;// To maximize distances from the boundaries in each step
+    // return  (C_control + C_boundaries);// To maximize distances from the boundaries & to minimize the total amount of control
+    // return 0.0;
 }
 
 
@@ -112,6 +123,7 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
    adouble af = final_states[ CINDEX(1) ];
    adouble yf = final_states[ CINDEX(2) ];
    adouble sf = final_states[ CINDEX(3) ];
+
 
    e[ CINDEX(1) ] = ai;
    e[ CINDEX(2) ] = yi;
@@ -175,7 +187,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 2;// sigma , beta
     problem.phases(1).nevents   		= 6;// ai , yi , si , af , yf, sf
     problem.phases(1).npath     		= 0;
-    problem.phases(1).nodes             = "[200 , 200, 200]"; 
+    problem.phases(1).nodes             = "[50]"; 
 
     psopt_level2_setup(problem, algorithm);
 
@@ -191,8 +203,8 @@ int main(void)
 ////////////////////////////////////////////////////////////////////////////
 
     double aL = 0.0;
-    double aU = 0.5897;//(345 / (345 + 240));
-    double yL = 0.3636;//( 4 / 11 );
+    double aU = aupper;
+    double yL = ylower;
     double yU = 1.0;
     double sL = 0.0;
     double sU = 1.0;
@@ -219,7 +231,6 @@ int main(void)
     double sf_upper = 1.0;
 ///////////////////////////////////////
     double TGuess = 100.0;
-
 
     problem.phases(1).bounds.lower.states(1) = aL;
     problem.phases(1).bounds.lower.states(2) = yL;
@@ -259,10 +270,8 @@ int main(void)
     problem.phases(1).bounds.lower.StartTime    = 0.0;
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
-    problem.phases(1).bounds.lower.EndTime      = 50.0;///???
-    problem.phases(1).bounds.upper.EndTime      = 200.0;///?????
-
-
+    problem.phases(1).bounds.lower.EndTime      = 5.0;///???
+    problem.phases(1).bounds.upper.EndTime      = 50.0;///?????
 
 ////////////////////////////////////////////////////////////////////////////
 ///////////////////  Register problem functions  ///////////////////////////
@@ -293,13 +302,12 @@ int main(void)
     problem.phases(1).guess.states         = x_guess;
     problem.phases(1).guess.time           = linspace(0.0,TGuess,nnodes);
 
-
 ////////////////////////////////////////////////////////////////////////////
 ///////////////////  Enter algorithm options  //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
 
-    algorithm.nlp_iter_max                = 3000;
+    algorithm.nlp_iter_max                = 1000;
     algorithm.nlp_tolerance               = 1.e-4;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
@@ -320,7 +328,6 @@ int main(void)
 ////////////////////////////////////////////////////////////////////////////
 ///////////  Extract relevant variables from solution structure   //////////
 ////////////////////////////////////////////////////////////////////////////
-
 
     x      = solution.get_states_in_phase(1);
     u      = solution.get_controls_in_phase(1);
@@ -345,18 +352,18 @@ int main(void)
 
     plot(t,x,problem.name+": states", "time (s)", "states","a y s");
 
-    plot(t,u(1,colon()),problem.name+": controls","time (s)", "controls", "Sigma");
-    plot(t,u(2,colon()),problem.name+": controls","time (s)", "controls", "Beta");
+    plot(t,u(1,colon()),problem.name+": Sigma","time (s)", "controls", "Sigma");
+    plot(t,u(2,colon()),problem.name+": Beta","time (s)", "controls", "Beta");
 
 
     plot(t,x,problem.name+": states", "time (s)", "states","a y s",
                              "pdf", "AYS_states.pdf");
 
-    plot(t,u(1,colon()),problem.name+": controls","time (s)", "Sigma", "Sigma",
-                             "pdf", "AYS_controls.pdf");
+    plot(t,u(1,colon()),problem.name+": Sigma","time (s)", "Sigma", "Sigma",
+                             "pdf", "AYS_sigma.pdf");
 
-    plot(t,u(1,colon()),problem.name+": controls","time (s)", "Beta", "Beta",
-                             "pdf", "AYS_controls.pdf");                             
+    plot(t,u(2,colon()),problem.name+": Beta","time (s)", "Beta", "Beta",
+                             "pdf", "AYS_beta.pdf");                             
 }
 
 ////////////////////////////////////////////////////////////////////////////
