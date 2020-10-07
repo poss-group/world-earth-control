@@ -61,10 +61,15 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
     double aU = 345 / (345 + 240);
     double yL = 4 / 11 ;
 
+	double a0 = 0.5;
+	double y0 = 0.5;
+
     adouble L;
-    //L = pow((sigma - sigma0) , 2) + pow((beta - beta0) , 2); // To minimize the total amount of control
-    L = - ( pow((a - aU),2) + pow((y - yL),2) ); // To maximize distances from the boundaries
-    return  L;
+    //L = pow((sigma - sigma0)/(sigma0) , 2) + pow((beta - beta0)/(beta0) , 2); // To minimize the total amount of control
+    //L = - ( pow((a - aU),2) + pow((y - yL),2) ); // To maximize distances from the boundaries
+    L = - ( pow(((a - aU)/(aU - a0)),2) + pow(((y - yL)/(yL - y0)),2) ); // To maximize distances from the boundaries
+    //return  0.0;
+    return L;
 }
 
 
@@ -175,7 +180,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 2;// sigma , beta
     problem.phases(1).nevents   		= 6;// ai , yi , si , af , yf, sf
     problem.phases(1).npath     		= 0;
-    problem.phases(1).nodes             = "[200 , 200, 200]"; 
+    problem.phases(1).nodes             = "[50]"; 
 
     psopt_level2_setup(problem, algorithm);
 
@@ -259,8 +264,8 @@ int main(void)
     problem.phases(1).bounds.lower.StartTime    = 0.0;
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
-    problem.phases(1).bounds.lower.EndTime      = 100.0;///???
-    problem.phases(1).bounds.upper.EndTime      = 100.0;///?????
+    problem.phases(1).bounds.lower.EndTime      = 80.0;///???
+    problem.phases(1).bounds.upper.EndTime      = 80.0;///?????
 
 
 
@@ -299,13 +304,14 @@ int main(void)
 ////////////////////////////////////////////////////////////////////////////
 
 
-    algorithm.nlp_iter_max                = 1000;
+    algorithm.nlp_iter_max                = 200;
     algorithm.nlp_tolerance               = 1.e-4;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     algorithm.mesh_refinement             = "automatic";
     algorithm.collocation_method = "Legendre";
+	algorithm.mr_max_iterations = 3;
 //    algorithm.defect_scaling = "jacobian-based";
     algorithm.ode_tolerance               = 1.e-6;
 
