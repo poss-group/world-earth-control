@@ -73,7 +73,7 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
     C_control = pow((sigma/sigma0 - 1) , 2) + pow((beta/beta0 - 1) , 2);
     C_boundaries = - ( pow((a - aupper),2) + pow((y - ylower),2) ); 
     return  C_control; // To minimize the total amount of control
-    // return  C_boundaries;// To maximize distances from the boundaries in each step
+    //return  C_boundaries;// To maximize distances from the boundaries in each step
     // return  (C_control + C_boundaries);// To maximize distances from the boundaries & to minimize the total amount of control
     // return 0.0;
 }
@@ -314,7 +314,8 @@ int main(void)
     algorithm.derivatives                 = "automatic";
     algorithm.mesh_refinement             = "automatic";
     algorithm.collocation_method = "Legendre";
-//    algorithm.defect_scaling = "jacobian-based";
+	algorithm.mr_max_iterations = 1; // limit the number of iterations for mesh refinement
+	//algorithm.defect_scaling = "jacobian-based";
     algorithm.ode_tolerance               = 1.e-6;
 
 
