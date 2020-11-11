@@ -47,12 +47,11 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
     adouble af = final_states[ CINDEX(1) ];
     adouble yf = final_states[ CINDEX(2) ];
     adouble L;
-    L = - ( pow((af - aupper),2) + pow((yf - ylower),2) );
-    // return L;//to maximize final distance from boundaries
+    L = (af - aupper) + (ylower - yf);
+    return L;//to maximize final distance from boundaries
     // return (L + tf);//to maximize final distance from boundaries & controlling time
     // return tf; // to minimize controlling time
-
-    return 0.0;
+    // return 0.0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -70,12 +69,12 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
 
     adouble C_control;
     adouble C_boundaries;
-    C_control = pow((sigma/sigma0 - 1) , 2) + pow((beta/beta0 - 1) , 2);
-    C_boundaries = - ( pow((a - aupper),2) + pow((y - ylower),2) ); 
-    return  C_control; // To minimize the total amount of control
-    //return  C_boundaries;// To maximize distances from the boundaries in each step
+    C_control = pow((sigma/sigma0) -1 , 2) + pow((beta/beta0) -1 , 2);;
+    C_boundaries = (a - aupper) + (ylower - y); 
+    // return  C_control; // To minimize the total amount of control
+    // return  C_boundaries;// To maximize distances from the boundaries
     // return  (C_control + C_boundaries);// To maximize distances from the boundaries & to minimize the total amount of control
-    // return 0.0;
+    return 0.0;
 }
 
 
@@ -230,7 +229,7 @@ int main(void)
     double yf_upper = 0.8134;
     double sf_upper = 1.0;
 ///////////////////////////////////////
-    double TGuess = 100.0;
+    double TGuess = 20.0;
 
     problem.phases(1).bounds.lower.states(1) = aL;
     problem.phases(1).bounds.lower.states(2) = yL;
@@ -307,15 +306,15 @@ int main(void)
 ////////////////////////////////////////////////////////////////////////////
 
 
-    algorithm.nlp_iter_max                = 1000;
+    algorithm.nlp_iter_max                = 200;
     algorithm.nlp_tolerance               = 1.e-4;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     algorithm.mesh_refinement             = "automatic";
     algorithm.collocation_method = "Legendre";
-	algorithm.mr_max_iterations = 1; // limit the number of iterations for mesh refinement
-	//algorithm.defect_scaling = "jacobian-based";
+    algorithm.mr_max_iterations = 3;
+//    algorithm.defect_scaling = "jacobian-based";
     algorithm.ode_tolerance               = 1.e-6;
 
 
