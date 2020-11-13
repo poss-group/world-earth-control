@@ -47,7 +47,8 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
     adouble af = final_states[ CINDEX(1) ];
     adouble yf = final_states[ CINDEX(2) ];
     adouble L;
-    L = (af - aupper) + (ylower - yf);
+    // L = (af - aupper) + (ylower - yf);
+    L = -(af + (1 - yf) );// corrected
     return L;//to maximize final distance from boundaries
     // return (L + tf);//to maximize final distance from boundaries & controlling time
     // return tf; // to minimize controlling time
@@ -69,8 +70,9 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
 
     adouble C_control;
     adouble C_boundaries;
-    C_control = pow((sigma/sigma0) -1 , 2) + pow((beta/beta0) -1 , 2);;
-    C_boundaries = (a - aupper) + (ylower - y); 
+    C_control = pow((sigma/sigma0) -1 , 2) + pow((beta/beta0) -1 , 2);
+    // C_boundaries = (aupper- a) + (y - ylower);
+    C_boundaries = a + (1 - y);// corrected
     // return  C_control; // To minimize the total amount of control
     // return  C_boundaries;// To maximize distances from the boundaries
     // return  (C_control + C_boundaries);// To maximize distances from the boundaries & to minimize the total amount of control
