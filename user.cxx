@@ -47,12 +47,12 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
     adouble af = final_states[ CINDEX(1) ];
     adouble yf = final_states[ CINDEX(2) ];
     adouble L;
-    // L = (af - aupper) + (ylower - yf);
-    L = -(af + (1 - yf) );// corrected
-    return L;//to maximize final distance from boundaries
+    // L = af - yf ;
+    // L = -(af + (1 - yf) );// corrected
+    // return L;//to maximize final distance from boundaries
     // return (L + tf);//to maximize final distance from boundaries & controlling time
     // return tf; // to minimize controlling time
-    // return 0.0;
+    return 0.0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -67,16 +67,18 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
 
     adouble a = states[ CINDEX(1) ];
     adouble y = states[ CINDEX(2) ];
-
+    adouble s = states[ CINDEX(3) ];
     adouble C_control;
     adouble C_boundaries;
-    C_control = pow((sigma/sigma0) -1 , 2) + pow((beta/beta0) -1 , 2);
-    // C_boundaries = (aupper- a) + (y - ylower);
-    C_boundaries = a + (1 - y);// corrected
+    // C_control = pow((sigma/sigma0) -1 , 2) + pow((beta/beta0) -1 , 2);
+    // C_control = pow((sigma/sigma0) -1 , 2);
+    // C_boundaries = a - y;
+    C_boundaries = a - y - s;//paper reward function
+    // C_boundaries = a + (1 - y);// corrected
     // return  C_control; // To minimize the total amount of control
-    // return  C_boundaries;// To maximize distances from the boundaries
+    return  C_boundaries;// To maximize distances from the boundaries
     // return  (C_control + C_boundaries);// To maximize distances from the boundaries & to minimize the total amount of control
-    return 0.0;
+    // return 0.0;
 }
 
 
@@ -212,7 +214,7 @@ int main(void)
 
 
 
-    double u1L = pow(10, 12);//sigma0 / 4;
+    double u1L = 2.83 * pow(10, 12);//sigma0 / sqrt(2);
     double u2L = 0.015;//beta0 / 2 ;
     double u1U = sigma0 ;
     double u2U = beta0 ;
@@ -272,7 +274,7 @@ int main(void)
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
     problem.phases(1).bounds.lower.EndTime      = 5.0;///???
-    problem.phases(1).bounds.upper.EndTime      = 50.0;///?????
+    problem.phases(1).bounds.upper.EndTime      = 300.0;///?????
 
 ////////////////////////////////////////////////////////////////////////////
 ///////////////////  Register problem functions  ///////////////////////////
@@ -316,7 +318,7 @@ int main(void)
     algorithm.mesh_refinement             = "automatic";
     algorithm.collocation_method = "Legendre";
     algorithm.mr_max_iterations = 3;
-//    algorithm.defect_scaling = "jacobian-based";
+    // algorithm.defect_scaling = "jacobian-based";
     algorithm.ode_tolerance               = 1.e-6;
 
 
