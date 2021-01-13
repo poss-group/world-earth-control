@@ -7,7 +7,7 @@
 //////// Title:        Optimal control of the AYS model  ////////////////
 //////// Last modified: 19 September 2020                 ////////////////
 //////////////////////////////////////////////////////////////////////////
-
+// rk4_propagate( dae, u_guess, time_guess, xini, param_guess, problem, iphase, x_guess, NULL);
 
 #include "psopt.h"
 
@@ -44,10 +44,10 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
                       adouble* parameters,adouble& t0, adouble& tf,
                       adouble* xad, int iphase, Workspace* workspace)
 {   
-    adouble af = final_states[ CINDEX(1) ];
-    adouble yf = final_states[ CINDEX(2) ];
-    adouble L;
-    // L = af - yf ;
+    // adouble af = final_states[ CINDEX(1) ];
+    // adouble yf = final_states[ CINDEX(2) ];
+    // adouble L;
+    // L = (af - aupper) + (ylower - yf);
     // L = -(af + (1 - yf) );// corrected
     // return L;//to maximize final distance from boundaries
     // return (L + tf);//to maximize final distance from boundaries & controlling time
@@ -67,14 +67,12 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
 
     adouble a = states[ CINDEX(1) ];
     adouble y = states[ CINDEX(2) ];
-    adouble s = states[ CINDEX(3) ];
+
     adouble C_control;
     adouble C_boundaries;
-    // C_control = pow((sigma/sigma0) -1 , 2) + pow((beta/beta0) -1 , 2);
-    // C_control = pow((sigma/sigma0) -1 , 2);
-    // C_boundaries = a - y;
-    C_boundaries = a - y - s;//paper reward function
-    // C_boundaries = a + (1 - y);// corrected
+    C_control = pow((sigma/sigma0) -1 , 2) + pow((beta/beta0) -1 , 2);
+    // C_boundaries = (aupper- a) + (y - ylower);
+    C_boundaries = a + (1 - y);// corrected
     // return  C_control; // To minimize the total amount of control
     return  C_boundaries;// To maximize distances from the boundaries
     // return  (C_control + C_boundaries);// To maximize distances from the boundaries & to minimize the total amount of control
@@ -100,7 +98,7 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
    adouble beta = controls[ CINDEX(2) ];
 
    adot = Yc * GAMMA(states , controls) * pow((1-a),2) * y /(phi * epsilon * Ac * (1-y)) - a*(1-a)/TA;
-   ydot = y * (1-y) * (beta * theta * Ac * a) / (1-a);
+   ydot = y * (1-y) * (beta - theta * Ac * a / (1-a) );
    sdot = (1 - GAMMA(states , controls)) * Yc * pow((1-s),2) * y / ( epsilon * Sc * (1-y)) - s * (1-s) / TS ;
 
    derivatives[ CINDEX(1) ] = adot;
@@ -214,10 +212,10 @@ int main(void)
 
 
 
-    double u1L = 2.83 * pow(10, 12);//sigma0 / sqrt(2);
+    double u1L = 4/sqrt(2) * pow(10, 12);//sigma0 / 4;
     double u2L = 0.015;//beta0 / 2 ;
-    double u1U = sigma0 ;
-    double u2U = beta0 ;
+    double u1U = 4 * pow(10, 12);// sigma0;
+    double u2U = 0.03;//beta0;
 
 
     double ai = 0.5;
@@ -274,7 +272,7 @@ int main(void)
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
     problem.phases(1).bounds.lower.EndTime      = 5.0;///???
-    problem.phases(1).bounds.upper.EndTime      = 300.0;///?????
+    problem.phases(1).bounds.upper.EndTime      = 150.0;///?????
 
 ////////////////////////////////////////////////////////////////////////////
 ///////////////////  Register problem functions  ///////////////////////////
@@ -291,6 +289,39 @@ int main(void)
 ///////////////////  Define & register initial guess ///////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
+
+    /////////////////////////////
+    /////////////////////////////
+    // DMatrix x_guess, u_guess, time_guess, param_guess, xini;
+    // int iphase = 1;
+    // int nnodes = problem.phases(1).nodes(1);
+    // int nstates = problem.phases(1).nstates;
+    // int ncontrols = problem.phases(1).ncontrols;
+    // int parameters = problem.phases(1).nparameters;
+    
+    // u_guess = zeros(ncontrols,nnodes);
+    // x_guess = zeros(nstates,nnodes);
+    // time_guess = linspace(0.0,TGuess,nnodes);
+    // param_guess = zeros(ncontrols,nnodes);
+    // xini.Resize(3,1);
+    // xini(1)= ai; xini(2)= yi ; xini(3)= si;
+    // u_guess(1,colon()) = 4.0/ sqrt(2) *pow(10,12)*ones(1,nnodes);
+    // u_guess(2,colon()) = 0.015*ones(1,nnodes);
+    // rk4_propagate( dae, u_guess, time_guess, xini, param_guess, problem, iphase, x_guess, NULL);
+    // tra(x_guess).Print("x_guess(iphase=1)");
+    // tra(time_guess).Print("time_guess(iphase=1)");
+
+
+    // problem.phases(1).guess.states = x_guess;
+    // problem.phases(1).guess.controls = u_guess;
+    // problem.phases(1).guess.time = time_guess;
+
+
+
+
+
+    /////////////////////////////
+    /////////////////////////////
     int nnodes    			            = problem.phases(1).nodes(1);
     int ncontrols                       = problem.phases(1).ncontrols;
     int nstates                         = problem.phases(1).nstates;
